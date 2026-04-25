@@ -29,7 +29,7 @@ By default, after generating the workspace, the generator runs `update_engine.py
 Optional arguments:
 
 ```bash
-python3 tools/seal_app_generator/generate_seal_app.py MyGame \
+python3 generate_seal_app.py MyGame \
   --output-dir /home/nikita/IdeaProjects \
   --desktop-package com.example.mygame.desktop \
   --game-package com.example.mygame.game \
@@ -70,7 +70,7 @@ The generator intentionally uses local binary engine dependencies, not engine so
 To refresh a previously generated workspace to the latest engine release:
 
 ```bash
-python3 tools/seal_app_generator/update_engine.py /home/nikita/IdeaProjects/MyGame
+python3 update_engine.py /home/<user>/IdeaProjects/MyGame
 ```
 
 This prints the downloaded engine release tag and updates engine binaries/docs in-place (workspace root, `desktop/`, `android/`).
