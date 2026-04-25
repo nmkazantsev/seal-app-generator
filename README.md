@@ -18,7 +18,7 @@ The generated workspace follows this structure:
 ## Usage
 
 ```bash
-python3 tools/seal_app_generator/generate_seal_app.py MyGame
+python3 generate_seal_app.py MyGame
 ```
 
 By default, after generating the workspace, the generator runs `update_engine.py` to download the latest Seal-Engine-3M GitHub release and update:
