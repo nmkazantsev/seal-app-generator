@@ -669,6 +669,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Overwrite the existing workspace folder if it already exists.",
     )
+    parser.add_argument(
+        "--skip-engine-update",
+        action="store_true",
+        help="Skip downloading the latest Seal-Engine-3M release and updating engine binaries/docs after generation.",
+    )
     return parser.parse_args()
 
 
@@ -859,6 +864,15 @@ def main() -> int:
         create_workspace_docs(payload_root, workspace_root, context)
         create_desktop_project(payload_root, desktop_root, context)
         create_android_project(payload_root, android_root, context)
+
+        if not args.skip_engine_update:
+            try:
+                from update_engine import update_workspace_engine
+
+                tag = update_workspace_engine(workspace_root, verbose=True)
+                print(f"Updated engine to release tag: {tag}")
+            except Exception as exc:
+                print(f"Engine update failed (generation still succeeded): {exc}", file=sys.stderr)
     except Exception as exc:
         print(f"Generation failed: {exc}", file=sys.stderr)
         return 1

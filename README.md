@@ -21,6 +21,11 @@ The generated workspace follows this structure:
 python3 tools/seal_app_generator/generate_seal_app.py MyGame
 ```
 
+By default, after generating the workspace, the generator runs `update_engine.py` to download the latest Seal-Engine-3M GitHub release and update:
+
+- engine binaries: `core.jar`, `desktop.jar`, `android.aar`, `obj-0.4.0.jar`
+- engine docs: `ENGINE-README.md` (ENGINE_README), `PROJECT_MAP_FOR_CODEX.md`, `ENGINE_INTERNALS_MAP_FOR_CODEX.md`
+
 Optional arguments:
 
 ```bash
@@ -30,6 +35,7 @@ python3 tools/seal_app_generator/generate_seal_app.py MyGame \
   --game-package com.example.mygame.game \
   --android-package com.example.mygame.mobile \
   --android-name "MyGame Android" \
+  --skip-engine-update \
   --force
 ```
 
@@ -58,3 +64,13 @@ Android app:
 ## Notes
 
 The generator intentionally uses local binary engine dependencies, not engine source modules.
+
+## Updating an existing workspace
+
+To refresh a previously generated workspace to the latest engine release:
+
+```bash
+python3 tools/seal_app_generator/update_engine.py /home/nikita/IdeaProjects/MyGame
+```
+
+This prints the downloaded engine release tag and updates engine binaries/docs in-place (workspace root, `desktop/`, `android/`).

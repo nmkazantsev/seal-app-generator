@@ -12,6 +12,12 @@ This document describes the editable resources used by `seal_app_generator`.
   - filesystem logic that creates the output workspace
   - payload loading logic
 
+- `update_engine.py`
+  Post-generation updater.
+  Downloads the latest Seal-Engine-3M GitHub release and updates an existing generated workspace:
+  - engine binaries in `desktop/libs/` and `android/app/libs/`
+  - engine docs (`ENGINE_README`, project map, internals map) in the workspace root, `desktop/`, and `android/`
+
 ## Editable Template Sources
 
 - `template_src/`
