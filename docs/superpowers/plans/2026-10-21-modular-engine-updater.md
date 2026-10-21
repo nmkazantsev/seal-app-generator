@@ -16,6 +16,7 @@
 - Keep `python3 update_engine.py [PROJECT_ROOT]` working.
 - When no project path is provided, confirm the current directory interactively; require an explicit path without an interactive terminal.
 - Discover literal engine library paths from Gradle and known artifact names in `libs/` folders; skip VCS and generated build directories.
+- When a release has `android.jar` but a project uses `android.aar`, replace only `classes.jar` and preserve the AAR manifest/resources.
 - Never write outside the selected project root.
 - In consumer projects, update existing engine-specific docs and preserve app `README.md` and `PROJECT_MAP_FOR_CODEX.md`.
 - Do not add dependencies or complex/general-purpose abstractions.
@@ -78,7 +79,7 @@
 - [x] **Step 5: Run `python3 -m unittest discover -s tests -v`**; expected output is all characterization tests passing.
 - [x] **Step 6: Run `python3 -m compileall -q main.py update_engine.py seal_engine_updater tests`**; expected exit code is 0.
 - [x] **Step 7: Update usage/structure docs and inspect the complete diff**, confirming `generate_seal_app.py` is unchanged.
-- [ ] **Step 8: Commit** as `refactor: split engine updater into modules`.
+- [x] **Step 8: Commit** as `refactor: split engine updater into modules`.
 
 ### Task 3: Verify desktop and mobile Tanki projects on separate branches
 
@@ -90,10 +91,10 @@
 - Consumes: `python3 update_engine.py PROJECT_ROOT` and the release published by `nmkazantsev/Seal-Engine-3M`.
 - Produces: one dedicated branch per Tanki repository with only the engine update committed.
 
-- [ ] **Step 1: Create a branch** named `codex/engine-update-desktop` in `../Tanki7-1` and `codex/engine-update-mobile` in `../Tanki7-1-mobile`; leave all existing staged and unstaged mobile edits untouched.
-- [ ] **Step 2: Run `python3 update_engine.py ../Tanki7-1`** from this repository; expected output lists and updates discovered desktop artifacts/docs, including the release `android.jar` found in `libs/`.
-- [ ] **Step 3: Run `python3 update_engine.py ../Tanki7-1-mobile`**; expected output updates mobile artifacts/docs and adapts the release `android.jar` into the existing `android.aar` while preserving AAR resources. The desktop branch already supplies the shared `core.jar` dependency.
-- [ ] **Step 4: Build desktop with `./gradlew build`** from `../Tanki7-1`; expected exit code is 0.
-- [ ] **Step 5: Build mobile with `./gradlew assembleDebug`** from `../Tanki7-1-mobile`; expected exit code is 0.
-- [ ] **Step 6: Stage only engine binaries and engine-specific docs changed by the updater**, verify the staged file list excludes pre-existing mobile edits, and commit each Tanki branch as `chore: update Seal Engine`.
-- [ ] **Step 7: Report branch names, engine tag, build results, and any files intentionally left untouched.**
+- [x] **Step 1: Create a branch** named `codex/engine-update-desktop` in `../Tanki7-1` and `codex/engine-update-mobile` in `../Tanki7-1-mobile`; leave all existing staged and unstaged mobile edits untouched.
+- [x] **Step 2: Run `python3 update_engine.py ../Tanki7-1`** from this repository; expected output lists and updates discovered desktop artifacts/docs, including the release `android.jar` found in `libs/`.
+- [x] **Step 3: Run `python3 update_engine.py ../Tanki7-1-mobile`**; expected output updates mobile artifacts/docs and adapts the release `android.jar` into the existing `android.aar` while preserving AAR resources. The desktop branch already supplies the shared `core.jar` dependency.
+- [x] **Step 4: Build desktop with `./gradlew build`** from `../Tanki7-1`; expected exit code is 0.
+- [x] **Step 5: Build mobile with `./gradlew assembleDebug`** from `../Tanki7-1-mobile` under JDK 21, which is compatible with its Gradle 8.13 wrapper; expected exit code is 0.
+- [x] **Step 6: Stage only engine binaries and engine-specific docs changed by the updater**, verify the staged file list excludes pre-existing mobile edits, and commit each Tanki branch as `chore: update Seal Engine`.
+- [x] **Step 7: Report branch names, engine tag, build results, and any files intentionally left untouched.**
