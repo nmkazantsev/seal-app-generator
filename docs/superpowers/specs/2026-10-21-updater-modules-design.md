@@ -12,6 +12,7 @@ Keep the app generator easy to find and maintain while making engine updates wor
 - With no project path, prompt in the terminal to use the current working directory. Require an explicit path when stdin is non-interactive. A declined confirmation cancels without downloading or writing files.
 - Find engine libraries by reading literal local artifact paths in Gradle files and by checking known engine artifact names in `libs/` folders. Ignore VCS and generated build directories. A selected parent directory may include both desktop and mobile projects.
 - Require release assets only for artifact types found in the selected tree. Update every discovered copy of those artifacts. Treat `obj-0.4.0.jar` as optional when the release omits it.
+- If a project uses `android.aar` but the release provides only `android.jar`, replace the existing AAR's `classes.jar` and preserve its manifest and other packaged resources.
 - For consumer projects, update existing engine-specific docs while preserving app `README.md` and `PROJECT_MAP_FOR_CODEX.md`. Keep generated-workspace documentation behavior as it is today.
 - Keep app generation out of the updater flow; do not change `generate_seal_app.py`.
 

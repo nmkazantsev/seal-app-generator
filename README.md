@@ -82,3 +82,5 @@ python3 update_engine.py
 ```
 
 In consumer projects the updater replaces existing engine-specific documentation (`ENGINE-README.md` and `ENGINE_INTERNALS_MAP_FOR_CODEX.md`) and leaves the app's `README.md` and `PROJECT_MAP_FOR_CODEX.md` intact. Generated workspaces retain their existing documentation update behavior.
+
+If a release provides `android.jar` while a project still uses `android.aar`, the updater replaces the AAR's `classes.jar` and keeps its manifest and packaged resources.

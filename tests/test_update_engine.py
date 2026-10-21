@@ -1,6 +1,7 @@
 import io
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -25,6 +26,13 @@ def touch(path: Path, content: str = "") -> Path:
     return path
 
 
+def make_jar_bytes() -> bytes:
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w") as archive:
+        archive.writestr("com/seal/Engine.class", b"new engine class")
+    return output.getvalue()
+
+
 class EngineDiscoveryTests(unittest.TestCase):
     def test_discovers_libraries_in_different_nested_project_layouts(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -39,6 +47,7 @@ class EngineDiscoveryTests(unittest.TestCase):
             """)
             core = touch(desktop / "libs" / "core.jar")
             desktop_jar = touch(desktop / "libs" / "desktop.jar")
+            android_jar = touch(desktop / "libs" / "android.jar")
             android_aar = touch(mobile / "app" / "libs" / "android.aar")
             obj_jar = touch(mobile / "app" / "libs" / "obj-0.4.0.jar")
 
@@ -46,6 +55,7 @@ class EngineDiscoveryTests(unittest.TestCase):
 
             self.assertEqual(found["core.jar"], {core.resolve()})
             self.assertEqual(found["desktop.jar"], {desktop_jar.resolve()})
+            self.assertEqual(found["android.jar"], {android_jar.resolve()})
             self.assertEqual(found["android.aar"], {android_aar.resolve()})
             self.assertEqual(found["obj-0.4.0.jar"], {obj_jar.resolve()})
 
@@ -136,6 +146,40 @@ class EngineUpdaterCliTests(unittest.TestCase):
             self.assertEqual(engine_readme.read_text(encoding="utf-8"), "new engine readme")
             self.assertEqual(internals.read_text(encoding="utf-8"), "new engine internals")
             self.assertEqual((root / "libs" / "core.jar").read_bytes(), b"new core")
+
+    def test_android_jar_release_refreshes_existing_aar_and_preserves_its_resources(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            touch(root / "app" / "build.gradle", "implementation files('libs/android.aar')")
+            aar_path = root / "app" / "libs" / "android.aar"
+            aar_path.parent.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(aar_path, "w") as archive:
+                archive.writestr("AndroidManifest.xml", "<manifest />")
+                archive.writestr("classes.jar", b"old classes")
+                archive.writestr("assets/engine.wav", b"keep this audio")
+
+            release_android_jar = make_jar_bytes()
+            release = {
+                "tag_name": "v-test",
+                "assets": [{"name": "android.jar", "browser_download_url": "https://example.invalid/android.jar"}],
+            }
+            engine_docs = {
+                "ENGINE_README": "new engine readme",
+                "PROJECT_MAP_FOR_CODEX": "new engine map",
+                "ENGINE_INTERNALS_MAP_FOR_CODEX": "new engine internals",
+            }
+
+            with patch("seal_engine_updater.updater.get_latest_release", return_value=(release, engine_docs)):
+                with patch(
+                    "seal_engine_updater.updater.download_asset",
+                    side_effect=lambda url, destination, token=None: destination.write_bytes(release_android_jar),
+                ):
+                    update_project_engine(root)
+
+            with zipfile.ZipFile(aar_path) as archive:
+                self.assertEqual(archive.read("classes.jar"), release_android_jar)
+                self.assertEqual(archive.read("AndroidManifest.xml"), b"<manifest />")
+                self.assertEqual(archive.read("assets/engine.wav"), b"keep this audio")
 
 
 if __name__ == "__main__":

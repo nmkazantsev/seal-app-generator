@@ -4,6 +4,7 @@ import datetime as _dt
 import re
 import shutil
 import tempfile
+import zipfile
 from pathlib import Path
 
 from .cli import DEFAULT_REPO
@@ -14,6 +15,7 @@ from .github import download_asset, find_release_asset, get_latest_release
 ENGINE_ASSETS = {
     "core.jar": [r"\bcore\b.*\.jar$"],
     "desktop.jar": [r"\bdesktop\b.*\.jar$"],
+    "android.jar": [r"\bandroid\b.*\.jar$"],
     "android.aar": [r"\bandroid\b.*\.aar$"],
     "obj-0.4.0.jar": [r"\bobj\b.*\.jar$"],
 }
@@ -43,6 +45,32 @@ def _required_release_asset(release: dict, name: str) -> dict:
     return asset
 
 
+def _release_asset_for_target(release: dict, name: str) -> dict:
+    if name == "android.aar":
+        aar_asset = find_release_asset(release, wanted_name="android.aar", patterns=ENGINE_ASSETS[name])
+        if aar_asset:
+            return aar_asset
+        jar_asset = find_release_asset(release, wanted_name="android.jar", patterns=ENGINE_ASSETS["android.jar"])
+        if jar_asset:
+            return jar_asset
+    return _required_release_asset(release, name)
+
+
+def _wrap_android_jar_in_aar(android_jar: Path, existing_aar: Path, refreshed_aar: Path) -> None:
+    """Replace classes.jar while keeping the AAR manifest and packaged resources."""
+    try:
+        with zipfile.ZipFile(existing_aar) as current, zipfile.ZipFile(
+            refreshed_aar, "w", compression=zipfile.ZIP_DEFLATED
+        ) as updated:
+            for member in current.infolist():
+                if member.filename == "classes.jar":
+                    continue
+                updated.writestr(member.filename, current.read(member.filename))
+            updated.write(android_jar, "classes.jar")
+    except (OSError, zipfile.BadZipFile) as exc:
+        raise UpdateEngineError(f"Could not refresh Android archive {existing_aar}: {exc}") from exc
+
+
 def update_project_engine(
     project_root: Path,
     *,
@@ -68,7 +96,7 @@ def update_project_engine(
         print(f"[update_engine] Latest release: {title} published {when}")
 
     asset_names = [name for name in targets if name != "obj-0.4.0.jar"]
-    required_assets = {name: _required_release_asset(release, name) for name in asset_names}
+    required_assets = {name: _release_asset_for_target(release, name) for name in asset_names}
     obj_asset = (
         find_release_asset(release, wanted_name="obj-0.4.0.jar", patterns=ENGINE_ASSETS["obj-0.4.0.jar"])
         if "obj-0.4.0.jar" in targets
@@ -77,7 +105,10 @@ def update_project_engine(
 
     with tempfile.TemporaryDirectory(prefix="seal_engine_update_") as temporary_dir:
         temporary_root = Path(temporary_dir)
-        downloads = {name: (asset, temporary_root / name) for name, asset in required_assets.items()}
+        downloads = {
+            name: (asset, temporary_root / f"{name}.download")
+            for name, asset in required_assets.items()
+        }
         if obj_asset:
             downloads["obj-0.4.0.jar"] = (obj_asset, temporary_root / "obj-0.4.0.jar")
 
@@ -95,10 +126,15 @@ def update_project_engine(
                 if verbose and artifact_name == "obj-0.4.0.jar":
                     print("[update_engine] Release has no obj-0.4.0.jar asset; keeping local copies.")
                 continue
-            for path in sorted(paths):
+            for index, path in enumerate(sorted(paths)):
                 if verbose:
                     print(f"[update_engine] Updating {path.relative_to(root)} ...")
-                shutil.copy2(downloaded[1], path)
+                if artifact_name == "android.aar" and downloaded[0].get("name") == "android.jar":
+                    refreshed_aar = temporary_root / f"android-{index}.aar"
+                    _wrap_android_jar_in_aar(downloaded[1], path, refreshed_aar)
+                    shutil.copy2(refreshed_aar, path)
+                else:
+                    shutil.copy2(downloaded[1], path)
 
     if is_generated_workspace(root):
         _write_text(root / "ENGINE-README.md", docs["ENGINE_README"])

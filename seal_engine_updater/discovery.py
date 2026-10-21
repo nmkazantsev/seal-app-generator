@@ -6,7 +6,7 @@ from pathlib import Path
 
 from .errors import UpdateEngineError
 
-ENGINE_ASSET_NAMES = {"core.jar", "desktop.jar", "android.aar", "obj-0.4.0.jar"}
+ENGINE_ASSET_NAMES = {"core.jar", "desktop.jar", "android.jar", "android.aar", "obj-0.4.0.jar"}
 IGNORED_DIRS = {".git", ".gradle", "build", "out", "target", "node_modules"}
 
 

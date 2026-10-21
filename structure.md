@@ -23,7 +23,7 @@ This document describes the editable resources used by `seal_app_generator`.
   - `cli.py`: options and project-root confirmation
   - `discovery.py`: engine binaries and docs in different project layouts
   - `github.py`: release assets, downloads, and engine docs
-  - `updater.py`: coordinates downloads and updates project files
+  - `updater.py`: coordinates downloads, updates project files, and adapts a release `android.jar` for an existing AAR while preserving its resources
   - `errors.py`: shared updater error
 
 - `generate_seal_app.py`

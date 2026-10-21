@@ -27,6 +27,7 @@
 - The user omits a path in a terminal: confirm before update. Cover yes/no input using `unittest.mock`.
 - The user omits a path in a non-interactive run: stop before network access. Cover stdin without a TTY.
 - The selected root is not a generated workspace: preserve its app README and project map. Cover with an updater doc-target unit test.
+- A release provides `android.jar` for an existing `android.aar`: update classes and preserve packaged resources. Cover with an updater unit test.
 
 ---
 
@@ -90,8 +91,8 @@
 - Produces: one dedicated branch per Tanki repository with only the engine update committed.
 
 - [ ] **Step 1: Create a branch** named `codex/engine-update-desktop` in `../Tanki7-1` and `codex/engine-update-mobile` in `../Tanki7-1-mobile`; leave all existing staged and unstaged mobile edits untouched.
-- [ ] **Step 2: Run `python3 update_engine.py ../Tanki7-1`** from this repository; expected output lists and updates discovered desktop artifacts/docs.
-- [ ] **Step 3: Run `python3 update_engine.py ../Tanki7-1-mobile`**; expected output updates mobile artifacts/docs and does not write outside that project root. The desktop branch already supplies the shared `core.jar` dependency.
+- [ ] **Step 2: Run `python3 update_engine.py ../Tanki7-1`** from this repository; expected output lists and updates discovered desktop artifacts/docs, including the release `android.jar` found in `libs/`.
+- [ ] **Step 3: Run `python3 update_engine.py ../Tanki7-1-mobile`**; expected output updates mobile artifacts/docs and adapts the release `android.jar` into the existing `android.aar` while preserving AAR resources. The desktop branch already supplies the shared `core.jar` dependency.
 - [ ] **Step 4: Build desktop with `./gradlew build`** from `../Tanki7-1`; expected exit code is 0.
 - [ ] **Step 5: Build mobile with `./gradlew assembleDebug`** from `../Tanki7-1-mobile`; expected exit code is 0.
 - [ ] **Step 6: Stage only engine binaries and engine-specific docs changed by the updater**, verify the staged file list excludes pre-existing mobile edits, and commit each Tanki branch as `chore: update Seal Engine`.
