@@ -13,10 +13,21 @@ This document describes the editable resources used by `seal_app_generator`.
   - payload loading logic
 
 - `update_engine.py`
-  Post-generation updater.
-  Downloads the latest Seal-Engine-3M GitHub release and updates an existing generated workspace:
-  - engine binaries in `desktop/libs/` and `android/app/libs/`
-  - engine docs (`ENGINE_README`, project map, internals map) in the workspace root, `desktop/`, and `android/`
+  Compatibility entry point for the engine updater. Existing `python3 update_engine.py ...` commands still work.
+
+- `main.py`
+  The updater's readable application flow: parse command-line options, confirm the project root when needed, run the update, and report its result.
+
+- `seal_engine_updater/`
+  Small updater modules grouped by responsibility:
+  - `cli.py`: options and project-root confirmation
+  - `discovery.py`: engine binaries and docs in different project layouts
+  - `github.py`: release assets, downloads, and engine docs
+  - `updater.py`: coordinates downloads, updates project files, and adapts a release `android.jar` for an existing AAR while preserving its resources
+  - `errors.py`: shared updater error
+
+- `generate_seal_app.py`
+  Separate application generator. Its creation behavior and templates are independent of the updater.
 
 ## Editable Template Sources
 

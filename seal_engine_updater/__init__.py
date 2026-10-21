@@ -1,0 +1,1 @@
+"""Seal Engine project updater."""
