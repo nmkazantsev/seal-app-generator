@@ -4,7 +4,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import main
 import update_engine
+from seal_engine_updater.discovery import discover_engine_targets
+from seal_engine_updater.updater import update_project_engine
 
 
 class FakeStdin(io.StringIO):
@@ -39,7 +42,7 @@ class EngineDiscoveryTests(unittest.TestCase):
             android_aar = touch(mobile / "app" / "libs" / "android.aar")
             obj_jar = touch(mobile / "app" / "libs" / "obj-0.4.0.jar")
 
-            found = update_engine._discover_engine_targets(root)
+            found = discover_engine_targets(root)
 
             self.assertEqual(found["core.jar"], {core.resolve()})
             self.assertEqual(found["desktop.jar"], {desktop_jar.resolve()})
@@ -53,7 +56,7 @@ class EngineDiscoveryTests(unittest.TestCase):
             touch(root / "app" / "build" / "generated" / "libs" / "desktop.jar")
             touch(root / ".git" / "objects" / "libs" / "android.aar")
 
-            found = update_engine._discover_engine_targets(root)
+            found = discover_engine_targets(root)
 
             self.assertEqual(found, {"core.jar": {library.resolve()}})
 
@@ -64,36 +67,39 @@ class EngineDiscoveryTests(unittest.TestCase):
             outside_jar = touch(parent / "outside" / "libs" / "core.jar")
             touch(root / "app" / "build.gradle", "implementation files('../../outside/libs/core.jar')")
 
-            found = update_engine._discover_engine_targets(root)
+            found = discover_engine_targets(root)
 
             self.assertNotIn("core.jar", found)
             self.assertTrue(outside_jar.is_file())
 
 
 class EngineUpdaterCliTests(unittest.TestCase):
+    def test_legacy_generator_import_still_exposes_update_function(self):
+        self.assertIs(update_engine.update_workspace_engine, update_project_engine)
+
     def test_omitted_path_uses_current_directory_only_after_confirmation(self):
         root = Path.cwd().resolve()
-        with patch.object(update_engine.sys, "stdin", FakeStdin(interactive=True)):
+        with patch.object(main.sys, "stdin", FakeStdin(interactive=True)):
             with patch("builtins.input", return_value="y"):
-                with patch.object(update_engine, "update_workspace_engine", return_value="v-test") as update:
-                    result = update_engine.main([])
+                with patch.object(main, "update_project_engine", return_value="v-test") as update:
+                    result = main.main([])
 
         self.assertEqual(result, 0)
-        update.assert_called_once_with(root, repo=update_engine.DEFAULT_REPO, token=None, verbose=True)
+        update.assert_called_once_with(root, repo="nmkazantsev/Seal-Engine-3M", token=None, verbose=True)
 
     def test_declined_path_confirmation_cancels_without_updating(self):
-        with patch.object(update_engine.sys, "stdin", FakeStdin(interactive=True)):
+        with patch.object(main.sys, "stdin", FakeStdin(interactive=True)):
             with patch("builtins.input", return_value="n"):
-                with patch.object(update_engine, "update_workspace_engine") as update:
-                    result = update_engine.main([])
+                with patch.object(main, "update_project_engine") as update:
+                    result = main.main([])
 
         self.assertEqual(result, 1)
         update.assert_not_called()
 
     def test_omitted_path_in_non_interactive_run_fails_before_update(self):
-        with patch.object(update_engine.sys, "stdin", FakeStdin(interactive=False)):
-            with patch.object(update_engine, "update_workspace_engine") as update:
-                result = update_engine.main([])
+        with patch.object(main.sys, "stdin", FakeStdin(interactive=False)):
+            with patch.object(main, "update_project_engine") as update:
+                result = main.main([])
 
         self.assertEqual(result, 2)
         update.assert_not_called()
@@ -117,14 +123,12 @@ class EngineUpdaterCliTests(unittest.TestCase):
                 "ENGINE_INTERNALS_MAP_FOR_CODEX": "new engine internals",
             }
 
-            with patch.object(update_engine, "_http_get_json", return_value=release):
-                with patch.object(update_engine, "_fetch_engine_docs_from_release_zipball", return_value=engine_docs):
-                    with patch.object(
-                        update_engine,
-                        "_download",
-                        side_effect=lambda url, destination, token=None: destination.write_bytes(b"new core"),
-                    ):
-                        tag = update_engine.update_workspace_engine(root)
+            with patch("seal_engine_updater.updater.get_latest_release", return_value=(release, engine_docs)):
+                with patch(
+                    "seal_engine_updater.updater.download_asset",
+                    side_effect=lambda url, destination, token=None: destination.write_bytes(b"new core"),
+                ):
+                    tag = update_project_engine(root)
 
             self.assertEqual(tag, "v-test")
             self.assertEqual(readme.read_text(encoding="utf-8"), "application readme")

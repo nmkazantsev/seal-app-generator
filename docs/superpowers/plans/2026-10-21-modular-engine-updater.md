@@ -4,7 +4,7 @@
 
 **Goal:** Split the engine updater into small, readable files while keeping app generation separate, supporting varied Gradle layouts, and verifying the updater against desktop and mobile Tanki projects on dedicated branches.
 
-**Architecture:** `main.py` shows the update flow and delegates argument handling to a small package. `seal_engine_updater/` separates discovery, GitHub access, updating, and shared errors. `generate_seal_app.py` remains unchanged, and `update_engine.py` remains a compatibility launcher.
+**Architecture:** `main.py` shows the update flow and delegates argument handling to a small package. `seal_engine_updater/` separates discovery, GitHub access, updating, and shared errors. `generate_seal_app.py` remains unchanged, and `update_engine.py` remains a compatibility launcher and keeps the function imported by the generator.
 
 **Tech Stack:** Python 3.10+, standard library, `unittest`, Gradle wrapper.
 
@@ -40,9 +40,9 @@
 - Consumes: current `update_engine._discover_engine_targets(project_root)` and current CLI entry behavior.
 - Produces: test cases that pin path discovery, root containment, and no-path confirmation before module extraction.
 
-- [ ] **Step 1: Write unittest cases** for Gradle literal paths across nested desktop/mobile folders, conventional `libs/` fallback, excluded `.git`/`build` paths, outside-root references, yes/no prompt, and non-interactive omitted path.
-- [ ] **Step 2: Run `python3 -m unittest discover -s tests -v`**; expected output is all new tests passing against the current updater implementation. Resolve any mismatch before refactoring.
-- [ ] **Step 3: Commit** as `test: characterize engine updater discovery`.
+- [x] **Step 1: Write unittest cases** for Gradle literal paths across nested desktop/mobile folders, conventional `libs/` fallback, excluded `.git`/`build` paths, outside-root references, yes/no prompt, and non-interactive omitted path.
+- [x] **Step 2: Run `python3 -m unittest discover -s tests -v`**; expected output is all new tests passing against the current updater implementation. Resolve any mismatch before refactoring.
+- [x] **Step 3: Commit** as `test: characterize engine updater discovery`.
 
 ### Task 2: Split updater responsibilities into modules
 
@@ -68,15 +68,15 @@
 - `seal_engine_updater.github.get_latest_release(repo: str, token: str | None) -> tuple[dict, dict[str, str]]` returns release metadata and required engine docs.
 - `seal_engine_updater.updater.update_project_engine(root: Path, *, repo: str, token: str | None, verbose: bool) -> str` updates discovered artifacts/docs and returns the tag.
 - `main.main(argv: list[str] | None = None) -> int` coordinates parse, root selection, update, and exit messages.
-- `update_engine.py` only delegates to `main.main` and retains the existing script invocation.
+- `update_engine.py` delegates CLI execution to `main.main`, re-exports `update_workspace_engine` for the generator, and retains the existing script invocation.
 
-- [ ] **Step 1: Move root validation and library/doc scanning** into `discovery.py`; update tests to import that public function.
-- [ ] **Step 2: Move HTTP, release matching, downloads, and zip documentation extraction** into `github.py`; retain the same timeout and GitHub error reporting behavior.
-- [ ] **Step 3: Move orchestration and file writes** into `updater.py`; preserve conditional release asset selection and generated-workspace documentation behavior.
-- [ ] **Step 4: Add `cli.py`, `main.py`, package files, and the compatibility launcher** with direct, readable control flow.
-- [ ] **Step 5: Run `python3 -m unittest discover -s tests -v`**; expected output is all characterization tests passing.
-- [ ] **Step 6: Run `python3 -m compileall -q main.py update_engine.py seal_engine_updater tests`**; expected exit code is 0.
-- [ ] **Step 7: Update usage/structure docs and inspect the complete diff**, confirming `generate_seal_app.py` is unchanged.
+- [x] **Step 1: Move root validation and library/doc scanning** into `discovery.py`; update tests to import that public function.
+- [x] **Step 2: Move HTTP, release matching, downloads, and zip documentation extraction** into `github.py`; retain the same timeout and GitHub error reporting behavior.
+- [x] **Step 3: Move orchestration and file writes** into `updater.py`; preserve conditional release asset selection and generated-workspace documentation behavior.
+- [x] **Step 4: Add `cli.py`, `main.py`, package files, and the compatibility launcher** with direct, readable control flow.
+- [x] **Step 5: Run `python3 -m unittest discover -s tests -v`**; expected output is all characterization tests passing.
+- [x] **Step 6: Run `python3 -m compileall -q main.py update_engine.py seal_engine_updater tests`**; expected exit code is 0.
+- [x] **Step 7: Update usage/structure docs and inspect the complete diff**, confirming `generate_seal_app.py` is unchanged.
 - [ ] **Step 8: Commit** as `refactor: split engine updater into modules`.
 
 ### Task 3: Verify desktop and mobile Tanki projects on separate branches

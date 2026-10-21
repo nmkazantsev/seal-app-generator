@@ -73,4 +73,12 @@ To refresh a previously generated workspace to the latest engine release:
 python3 update_engine.py /home/<user>/IdeaProjects/MyGame
 ```
 
-This prints the downloaded engine release tag and updates engine binaries/docs in-place (workspace root, `desktop/`, `android/`).
+The updater finds Seal Engine libraries from Gradle file dependencies and known engine artifact names in `libs/` folders, so the project does not need the generated `desktop/` + `android/` layout. Pass a common parent folder to update related projects together, such as a desktop project and its mobile app.
+
+If the path is omitted, the updater asks in the console whether it should use the current folder as the project root:
+
+```bash
+python3 update_engine.py
+```
+
+In consumer projects the updater replaces existing engine-specific documentation (`ENGINE-README.md` and `ENGINE_INTERNALS_MAP_FOR_CODEX.md`) and leaves the app's `README.md` and `PROJECT_MAP_FOR_CODEX.md` intact. Generated workspaces retain their existing documentation update behavior.
